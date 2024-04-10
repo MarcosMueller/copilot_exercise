@@ -19,7 +19,41 @@ def upload_to_s3():
         password=PG_PASSWORD
     )
 
+    cursor = conn.cursor()
 
+    # Executa a consulta SQL
+    cursor.execute(f'SELECT * FROM {PG_TABLE}')
+    rows = cursor.fetchall()
+
+    # Desconecta do PostgreSQL
+    cursor.close()
+    conn.close()
+
+    # Converte os dados para formato JSON
+    data = []
+    for row in rows:
+        data.append({
+            'column1': row[0],
+            'column2': row[1],
+            # Adicione mais colunas conforme necessário
+    })
+
+    # Salva os dados no formato JSON
+    json_data = json.dumps(data)
+
+    # Conecta-se ao Amazon S3
+    s3 = boto3.client('s3',
+                      aws_access_key_id=AWS_ACCESS_KEY_ID,
+                      aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+
+    # Envia o arquivo JSON para o S3
+    s3.put_object(
+        Bucket=S3_BUCKET_NAME,
+        Key=S3_OBJECT_KEY,
+        Body=json_data.encode('utf-8')
+    )
+
+    print(f'Dados salvos com sucesso em {S3_BUCKET_NAME}/{S3_OBJECT_KEY}')
 
 OWNER = {
     "name": "Marcos",
