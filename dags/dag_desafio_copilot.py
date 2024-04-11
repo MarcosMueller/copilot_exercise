@@ -1,6 +1,7 @@
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.operators.python import PythonOperator
 from airflow import DAG
+from airflow.models import Variable
 from datetime import timedelta, date, datetime
 import psycopg2
 import json
@@ -20,6 +21,10 @@ PG_DATABASE="github_copilot"
 PG_USER="copilot"
 PG_PASSWORD="bL9nzFUQK2pnSCqsCrfc"
 PG_TABLE="vendas"
+
+# Acesso ao s3
+s3_access_id=Variable.get("AWS_ACCESS_KEY_ID")
+s3_secret_access_key=Variable.get("AWS_SECRET_ACCESS_KEY")
 
 # Bucket e prefix
 S3_BUCKET_NAME="github-copilot-desafio"
@@ -58,8 +63,8 @@ def upload_to_s3():
 
     # Conecta-se ao Amazon S3
     s3 = boto3.client('s3',
-                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+                        aws_access_key_id=s3_access_id,
+                        aws_secret_access_key=s3_secret_access_key)
 
     # Envia o arquivo JSON para o S3
     s3.put_object(
@@ -89,10 +94,10 @@ with DAG(
         python_callable=upload_to_s3,
         execution_timeout=timedelta(hours=1),
         op_kwargs={
-            "bucket_name": "github-copilot-desafio",
-            "s3_prefix": f"marcos-mueller/{{{{ data_interval_start }}}}",
-        },
-        executor_config=DEFAULT_EXECUTOR_CONFIG_OVERRIDE,
+            "bucket_name": S3_BUCKET_NAME,
+            "s3_prefix": S3_OBJECT_KEY,
+        }
     )
+
 
 
