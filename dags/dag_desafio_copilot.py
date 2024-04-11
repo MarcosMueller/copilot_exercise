@@ -1,15 +1,22 @@
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.operators.python import PythonOperator
 from airflow import DAG
-from datetime import timedelta
+from datetime import timedelta, date
 import psycopg2
+import json
+import boto3
 
 # Acesso ao Postgres 
 PG_HOST="github-copilot.ctdrgq7tvep2.us-east-1.rds.amazonaws.com"
 PG_DATABASE="github_copilot"
 PG_USER="copilot"
 PG_PASSWORD="bL9nzFUQK2pnSCqsCrfc"
+PG_TABLE="vendas"
 
+# Bucket e prefix
+S3_BUCKET_NAME="github-copilot-desafio"
+hoje=date.today()
+S3_OBJECT_KEY=f"marcos-mueller/vendas{hoje.strftime('%Y-%m-%d')}"
 
 def upload_to_s3():
     conn = psycopg2.connect(
@@ -33,9 +40,9 @@ def upload_to_s3():
     data = []
     for row in rows:
         data.append({
-            'column1': row[0],
-            'column2': row[1],
-            # Adicione mais colunas conforme necessário
+            'id_venda': row[0],
+            'data_venda': row[1].strftime('%Y-%m-%d'),
+            'quantidade': row[2],
     })
 
     # Salva os dados no formato JSON
@@ -43,8 +50,8 @@ def upload_to_s3():
 
     # Conecta-se ao Amazon S3
     s3 = boto3.client('s3',
-                      aws_access_key_id=AWS_ACCESS_KEY_ID,
-                      aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+                        aws_access_key_id=AWS_ACCESS_KEY_ID,
+                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
 
     # Envia o arquivo JSON para o S3
     s3.put_object(
