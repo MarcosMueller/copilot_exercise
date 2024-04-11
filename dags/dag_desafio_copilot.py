@@ -1,10 +1,18 @@
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.operators.python import PythonOperator
 from airflow import DAG
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 import psycopg2
 import json
 import boto3
+
+# Default ARGS
+DEFAULT_ARGS = {
+    "start_date": datetime(2023, 1, 1),
+    "retries": 2,
+    "email_on_retry": False,
+    "email_on_failure": False,
+}
 
 # Acesso ao Postgres 
 PG_HOST="github-copilot.ctdrgq7tvep2.us-east-1.rds.amazonaws.com"
